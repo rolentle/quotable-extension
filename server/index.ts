@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { buildMarkdown, slugify } from "./utils";
 
 const QUOTES_DIR =
   process.env.QUOTES_DIR ?? join(import.meta.dir, "../../rolentle/src/content/quotes");
@@ -13,35 +14,6 @@ const CORS_HEADERS = {
 
 await mkdir(QUOTES_DIR, { recursive: true });
 
-function slugify(text: string): string {
-  const slug = text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .split("-")
-    .slice(0, 6)
-    .join("-");
-  return slug || "untitled";
-}
-
-function escapeYaml(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\r?\n/g, " ")
-    .trim();
-}
-
-function formatBlockquote(text: string): string {
-  return text
-    .trim()
-    .split("\n")
-    .map((line) => `> ${line}`)
-    .join("\n");
-}
-
 async function uniqueFilePath(slug: string): Promise<string> {
   let candidate = join(QUOTES_DIR, `${slug}.md`);
   if (!(await Bun.file(candidate).exists())) return candidate;
@@ -50,27 +22,6 @@ async function uniqueFilePath(slug: string): Promise<string> {
     if (!(await Bun.file(candidate).exists())) return candidate;
   }
   throw new Error("Too many duplicate slugs");
-}
-
-function buildMarkdown(
-  text: string,
-  url: string,
-  pageTitle: string,
-  notes?: string,
-  author?: string
-): { content: string; dateStr: string } {
-  const dateStr = new Date().toISOString().split("T")[0];
-  const titleEscaped = escapeYaml(pageTitle);
-  const urlEscaped = escapeYaml(url);
-
-  let frontmatter = `---\ntitle: "${titleEscaped}"\ndate: ${dateStr}\nurl: "${urlEscaped}"\nsourceTitle: "${titleEscaped}"`;
-  if (author?.trim()) frontmatter += `\nauthor: "${escapeYaml(author)}"`;
-  frontmatter += `\ntags: []\n---`;
-
-  let body = `\n${formatBlockquote(text)}\n\n— [${pageTitle.trim()}](${url})`;
-  if (notes?.trim()) body += `\n\n${notes.trim()}`;
-
-  return { content: `${frontmatter}\n${body}\n`, dateStr };
 }
 
 Bun.serve({
