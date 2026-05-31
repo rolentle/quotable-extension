@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Quotable",
+  "version": "1.0.0",
+  "description": "Highlight text on any page to save it as a quote post",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "host_permissions": [
+    "http://localhost:7331/*"
+  ]
+}
